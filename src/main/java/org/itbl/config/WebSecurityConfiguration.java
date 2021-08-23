@@ -1,5 +1,7 @@
 package org.itbl.config;
 
+
+import org.itbl.JwtFilter;
 import org.itbl.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -10,8 +12,10 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 
 @Configuration
@@ -20,6 +24,9 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 	
 	@Autowired
 	private CustomUserDetailsService customUserDetailsService;
+	
+	@Autowired
+	private JwtFilter jwtFilter;
 	
 
 	@Override
@@ -31,12 +38,22 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		
+		// Add a filter to validate the tokens with every request
+				http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+		
 		
 		http
 			.csrf().disable()
 			.authorizeRequests()
 			.antMatchers(HttpMethod.POST, "/authenticate").permitAll()
-			.anyRequest().authenticated();
+			.anyRequest().authenticated()
+			.and()
+			.sessionManagement()
+			.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+//			.and()
+//			.addFilterBefore(UsernamePasswordAuthenticationFilter.class, jwtFilter);
+		
+		
 	}
 
 	@Override
